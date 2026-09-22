@@ -9,9 +9,11 @@ http:
       - GET /dns-query/{ClientID}
       - POST /dns-query/{ClientID}
     insecure_enabled: false
-  address: 0.0.0.0:3000
+  address: 100.71.252.27:3000
   session_ttl: 30d
-users: []
+users:
+  - name: admin
+    password: $2b$12$OFcRrN2OoP6stR4ZUZjRPuEfc68.DVWu0s5LQDGv3thon2hV77Dcy
 auth_attempts: 5
 block_auth_min: 15
 http_proxy: ""
@@ -19,7 +21,7 @@ language: ""
 theme: auto
 dns:
   bind_hosts:
-    - 0.0.0.0
+    - 127.0.0.1
   port: 5335
   anonymize_client_ip: false
   ratelimit: 0

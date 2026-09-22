@@ -1,9 +1,4 @@
 # Put your custom commands here that should be executed once
 # the system init finished. By default this file does nothing.
 
-/etc/init.d/tailscale start
-sleep 3
-ip addr add 100.71.252.27/32 dev tailscale0 2>/dev/null
-ip route add 100.64.0.0/10 dev tailscale0 scope link 2>/dev/null
-
 exit 0

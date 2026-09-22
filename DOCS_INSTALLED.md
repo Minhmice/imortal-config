@@ -8,7 +8,7 @@ Tài liệu chi tiết cấu hình và tối ưu hóa router Airoha AN7581.
 - Cấu hình: `/etc/3proxy-residential.cfg`.
 - 3proxy chạy trên port `10001`, `10002`, `10003`; Tailscale cấp IP `100.71.252.27`.
 - Ba port cùng đi ra qua WAN `192.168.1.40`, chia sẻ cùng public egress IP.
-- Dropbear SSH đã bỏ giới hạn interface `lan`, cho phép quản trị an toàn từ xa qua Tailscale (`ssh root@100.71.252.27`).
+- Dropbear SSH nghe trên LAN và Tailscale; đăng nhập mật khẩu đã tắt, chỉ nhận SSH key.
 - Định dạng client:
   ```text
   socks5h://<user>:<password>@100.71.252.27:<port>
@@ -18,8 +18,8 @@ Tài liệu chi tiết cấu hình và tối ưu hóa router Airoha AN7581.
 
 ## 2. Phần cứng Định Tuyến Tốc Độ Cao (Flow Offloading / Hardware NAT)
 - Cấu hình: `/etc/config/firewall` (`flow_offloading='1'`, `flow_offloading_hw='1'`).
-- Tình trạng: Flowtable phần cứng (`flags offload`) đã hoạt động trực tiếp trên các cổng `lan1` (2.5G), `lan2`, `lan3`, `lan4`.
-- Tác dụng: Khi truyền tải lưu lượng lớn (download 2.5Gbps, kéo torrent, truyền file LAN), gói tin được switch phần cứng định tuyến trực tiếp mà không tốn chu kỳ CPU, giữ tải CPU ở mức < 1%.
+- Tình trạng: nftables flowtable có `flags offload` trên `lan1`, `lan2`, `lan3`, `lan4`; NPU firmware hiện diện và driver đã bind.
+- Tác dụng: các luồng đủ điều kiện có thể bypass phần lớn network stack. Không khẳng định tải CPU `<1%` nếu chưa benchmark thực tế; tắt hardware offload khi dùng SQM hoặc cần NLBWMON đếm tuyệt đối chính xác.
 
 ---
 
@@ -33,9 +33,9 @@ Tài liệu chi tiết cấu hình và tối ưu hóa router Airoha AN7581.
     → Internet
   ```
 - Kết quả kiểm tra:
-  - Tên miền quảng cáo (`doubleclick.net`) bị chặn về `0.0.0.0`.
-  - Tên miền thông thường (`google.com`) được phân giải song song với độ trễ thấp nhất.
-- Giao diện quản trị AdGuard Home: `http://100.71.252.27:3000` (hoặc `http://192.168.2.1:3000`).
+  - `doubleclick.net` trả `0.0.0.0`/`::`.
+  - `google.com` trả kết quả bình thường qua chuỗi dnsmasq → AdGuard Home → SmartDNS.
+- AdGuard Home DNS chỉ nghe loopback `127.0.0.1:5335`; Web UI chỉ nghe Tailscale `100.71.252.27:3000` và đã bật xác thực admin.
 
 ---
 
@@ -43,14 +43,14 @@ Tài liệu chi tiết cấu hình và tối ưu hóa router Airoha AN7581.
 - Cấu hình:
   - `system.@system[0].zram_comp_algo='zstd'`
   - `system.@system[0].zram_size_mb='256'`
-  - `vm.swappiness = 100` trong `/etc/sysctl.d/15-zram-swap.conf`
-- Tác dụng: Tăng kích thước swap nén lên 256MB dùng thuật toán `zstd` có tỷ lệ nén cao, mở rộng dung lượng bộ nhớ khả dụng của router để chạy ổn định đồng thời 3proxy, AdGuard Home, SmartDNS và OpenClash.
+  - `vm.swappiness = 100` trong `/etc/sysctl.conf` (file được OpenWrt backup qua sysupgrade).
+- ZRAM là swap nén trong RAM, không biến 328MB RAM thành một dung lượng cố định lớn hơn. `zstd` ưu tiên tỷ lệ nén; theo dõi CPU/latency và đổi sang `lz4` nếu swap-heavy.
 
 ---
 
 ## 5. TCP BBR Congestion Control
-- Kernel module `kmod-tcp-bbr` được kích hoạt và gán mặc định trong `/etc/sysctl.d/12-tcp-bbr.conf`.
-- Tối ưu hóa throughput cho các kết nối xuyên quốc gia, giảm packet loss và tối ưu độ trễ cho Proxy / VPN.
+- Kernel module `kmod-tcp-bbr` được kích hoạt; `net.ipv4.tcp_congestion_control=bbr` lưu trong `/etc/sysctl.conf`.
+- BBR chỉ áp dụng cho TCP do chính router phát/nhận (ví dụ 3proxy, SSH), không tự thay đổi congestion control của các máy LAN được NAT qua router.
 
 ---
 
@@ -58,10 +58,22 @@ Tài liệu chi tiết cấu hình và tối ưu hóa router Airoha AN7581.
 - File: `/etc/nftables.d/20-ttl-lock.nft`.
 - Tự động chuẩn hóa IPv4 TTL = 64 và IPv6 Hop Limit = 64 tại hook postrouting.
 
+## 7. Hardening sau audit
+- Đã xóa rule WAN `Allow-3proxy`; proxy chỉ dùng qua Tailscale/LAN.
+- Đã tắt full-cone NAT vì không có nhu cầu gaming/NAT traversal cụ thể.
+- Đã gỡ các include firewall Zerotier/OpenClash không hoạt động để `fw4 check` sạch cảnh báo.
+- Tailscale đã trả về procd quản lý bằng nftables; xóa route/IP thủ công trong `rc.local` và hotplug.
+- PBR, NATMap và OpenClash vẫn tắt vì chưa có policy/instance thực tế.
+- `dns_redirect` toàn cục đã tắt; cưỡng ép DNS toàn mạng chỉ nên thêm bằng rule giới hạn source zone LAN, không redirect mọi interface.
+- LuCI/AdGuard/SSH vẫn chỉ nên dùng qua LAN/Tailscale; WAN input tiếp tục `REJECT`.
+
 ---
 
-## 7. Các công cụ quản trị khác
-- **Policy Based Routing (`pbr`)**: Định tuyến theo thiết bị / domain.
-- **NLBWMON (`nlbwmon`)**: Giám sát lưu lượng mạng chi tiết từng IP trong LuCI.
-- **Wake-on-LAN (`luci-app-wol`)**: Đánh thức PC từ xa qua mạng nội bộ hoặc Tailscale.
-- **NATMap (`natmap`)**: Hỗ trợ đục lỗ CGNAT khi cần mở port.
+## 8. Các công cụ quản trị khác
+
+---
+
+- **Policy Based Routing (`pbr`)**: đã cài nhưng đang tắt; bật sau khi có policy rõ ràng.
+- **NLBWMON (`nlbwmon`)**: đang chạy; hardware offload có thể làm thiếu thống kê một số luồng.
+- **Wake-on-LAN (`luci-app-wol`)**: đánh thức PC từ LAN/Tailscale.
+- **NATMap (`natmap`)**: đã cài nhưng không có instance; ưu tiên Tailscale hơn expose dịch vụ công khai.

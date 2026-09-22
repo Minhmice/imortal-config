@@ -6,7 +6,7 @@ config defaults
 	option forward 'REJECT'
 	option flow_offloading '1'
 	option flow_offloading_hw '1'
-	option fullcone '1'
+	option fullcone '0'
 	option fullcone6 '0'
 
 config zone
@@ -124,43 +124,14 @@ config rule
 	option proto 'udp'
 	option target 'ACCEPT'
 
-config include 'zerotier_input'
-	option type 'nftables'
-	option path '/var/run/zerotier-one/_fw4/input.nft'
-	option position 'chain-pre'
-	option chain 'input'
-
-config include 'zerotier_srcnat'
-	option type 'nftables'
-	option path '/var/run/zerotier-one/_fw4/srcnat.nft'
-	option position 'chain-pre'
-	option chain 'srcnat'
-
-config include 'zerotier_forward'
-	option type 'nftables'
-	option path '/var/run/zerotier-one/_fw4/forward.nft'
-	option position 'chain-pre'
-	option chain 'forward'
-
-config include 'openclash'
-	option type 'script'
-	option path '/var/etc/openclash.include'
-
-config rule
-	option name 'Allow-3proxy'
-	option src 'wan'
-	option proto 'tcp'
-	option dest_port '10001 10002 10003'
-	option target 'ACCEPT'
-
 config zone
 	option name 'tailscale'
 	option network 'tailscale'
 	option input 'ACCEPT'
 	option output 'ACCEPT'
 	option forward 'ACCEPT'
-	option masq '1'
-	option mtu_fix '1'
+	option masq '0'
+	option mtu_fix '0'
 	option device 'tailscale0'
 
 config forwarding
