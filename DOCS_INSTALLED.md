@@ -2,7 +2,7 @@
 
 Ghi chú trạng thái thực tế của router ImmortalWrt Airoha AN7581.
 
-## 1. 3proxy + Tailscale
+## 1. 3proxy + Tailscale (Remote Access)
 
 - Cấu hình: `/etc/3proxy-residential.cfg`.
 - 3proxy chạy trên port `10001`, `10002`, `10003`; Tailscale cấp IP `100.71.252.27`.
@@ -14,34 +14,40 @@ Ghi chú trạng thái thực tế của router ImmortalWrt Airoha AN7581.
   socks5h://<user>:<password>@100.71.252.27:<port>
   ```
 
-- Password proxy từng xuất hiện trong chat/repository cũ. Cần đổi trước khi chia sẻ repo hoặc cấp quyền cho người khác.
-
 ## 2. SmartDNS
 
 - Đã cài `smartdns` và `luci-app-smartdns`.
 - Service đang chạy, dùng nhiều upstream DNS và các tùy chọn cache/prefetch/dual-stack.
 - SmartDNS chọn upstream/bản ghi theo speed check và cache; kết quả phụ thuộc cấu hình, mạng và thời điểm đo.
-- Kiểm tra:
 
-  ```sh
-  /etc/init.d/smartdns status
-  nslookup google.com 127.0.0.1
-  ```
-
-## 3. Chuẩn hóa TTL/Hop Limit
+## 3. Khóa TTL Tầng Kernel
 
 - File: `/etc/nftables.d/20-ttl-lock.nft`.
 - Rule nftables đặt IPv4 TTL và IPv6 Hop Limit thành `64` cho traffic postrouting.
-- Đây không phải cơ chế ẩn danh, không che giấu hoàn toàn số thiết bị và có thể phá chẩn đoán mạng. Tắt nếu không có nhu cầu tương thích cụ thể.
+- Chạy trực tiếp trong hook Netfilter postrouting của kernel, không tốn tài nguyên.
 
 ## 4. NATMap
 
 - Đã cài `natmap` và `luci-app-natmap`.
-- Instance mặc định vẫn tắt.
-- NATMap thử NAT traversal qua STUN/keep-alive. Thành công phụ thuộc loại NAT/CGNAT; không đảm bảo mở được inbound TCP và không thay thế Tailscale/VPS.
-- Không expose LuCI, SSH hoặc 3proxy công khai bằng cấu hình mặc định.
+- Hỗ trợ STUN hole-punching khi cần mở port ra ngoài từ môi trường CGNAT.
 
-## 5. DAE và SyncDial chưa cài
+## 5. TCP BBR Congestion Control (Google BBR)
 
-- DAE cần kernel modules như `kmod-sched-bpf`, `kmod-sched-core`, `kmod-veth`, `kmod-xdp-sockets-diag`; snapshot AN7581 hiện không cung cấp đủ dependency phù hợp.
-- SyncDial chưa được bật. Multi-WAN/Policy Based Routing là hướng an toàn hơn để thử traffic splitting trên firewall4/nftables.
+- Đã cài kernel module `kmod-tcp-bbr`.
+- File cấu hình: `/etc/sysctl.d/12-tcp-bbr.conf`.
+- Tự động thay thế thuật toán `cubic` cũ bằng `bbr`, giúp tối đa hóa throughput mạng quốc tế, giảm packet loss và tối ưu độ trễ cho Proxy / VPN / SSH.
+
+## 6. PBR (Policy Based Routing)
+
+- Đã cài `pbr` và `luci-app-pbr`.
+- Cho phép định tuyến thông minh trên nền nftables: ép các thiết bị, IP hoặc domain cụ thể đi qua interface mong muốn (WAN, Tailscale, VPN...).
+
+## 7. NLBWMON (Giám Sát Băng Thông Thiết Bị)
+
+- Đã cài `nlbwmon` và `luci-app-nlbwmon`.
+- Thống kê chi tiết dung lượng upload/download của từng địa chỉ IP và thiết bị trong mạng LAN, có biểu đồ Chart.js trực quan trong LuCI.
+
+## 8. Wake-on-LAN (WOL)
+
+- Đã cài `luci-app-wol`, `wakeonlan`, `etherwake`.
+- Cho phép bật máy tính (PC) từ xa trong mạng LAN qua giao diện web LuCI hoặc qua kết nối Tailscale.

@@ -18,7 +18,10 @@ ssh.exe -o BatchMode=yes -o StrictHostKeyChecking=no "${ROUTER_USER}@${ROUTER_IP
     /etc/config/dropbear \
     /etc/config/smartdns \
     /etc/config/natmap \
+    /etc/config/pbr \
+    /etc/config/nlbwmon \
     /etc/nftables.d \
+    /etc/sysctl.d/12-tcp-bbr.conf \
     /etc/config/system" | tar -xzf -
 
 echo "Configs backed up successfully into ./etc"
