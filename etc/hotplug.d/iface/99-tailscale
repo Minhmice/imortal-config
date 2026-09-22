@@ -1,0 +1,6 @@
+#!/bin/sh
+[ "$ACTION" = "ifup" ] || [ "$ACTION" = "add" ] || exit 0
+if ip link show tailscale0 >/dev/null 2>&1; then
+    ip addr show dev tailscale0 | grep -q '100.71.252.27' || ip addr add 100.71.252.27/32 dev tailscale0
+    ip route show dev tailscale0 | grep -q '100.64.0.0/10' || ip route add 100.64.0.0/10 dev tailscale0 scope link
+fi

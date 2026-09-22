@@ -1,0 +1,72 @@
+
+config interface 'loopback'
+	option device 'lo'
+	option proto 'static'
+	list ipaddr '127.0.0.1/8'
+
+config globals 'globals'
+	option dhcp_default_duid '000428e1b9062a94433386c0abcb477b442a'
+	option ula_prefix 'fd5a:864e:30f0::/48'
+	option packet_steering '1'
+
+config device
+	option name 'br-lan'
+	option type 'bridge'
+	list ports 'lan2'
+	list ports 'lan3'
+	list ports 'lan4'
+	option macaddr '04:56:65:98:D7:E5'
+
+config interface 'lan'
+	option device 'br-lan'
+	option proto 'static'
+	option ip6assign '60'
+	option multipath 'off'
+	list ipaddr '192.168.1.11/24'
+	list ipaddr '192.168.2.1/24'
+
+config interface 'wan'
+	option device 'lan1'
+	option proto 'dhcp'
+
+config interface 'wan6'
+	option device 'lan1'
+	option proto 'dhcpv6'
+
+config device 'eth0_mac_fix'
+	option name 'eth0'
+	option macaddr '04:56:65:98:D7:E5'
+
+config device 'lan2_mac_fix'
+	option name 'lan2'
+	option macaddr '04:56:65:98:D7:E5'
+
+config device 'lan3_mac_fix'
+	option name 'lan3'
+	option macaddr '04:56:65:98:D7:E5'
+
+config device 'lan4_mac_fix'
+	option name 'lan4'
+	option macaddr '04:56:65:98:D7:E5'
+
+config device 'lan1_mac_fix'
+	option name 'lan1'
+	option macaddr '04:56:65:09:FE:8F'
+
+config route 'proxy_wan1_link'
+	option interface 'wan'
+	option target '192.168.1.0/24'
+	option source '192.168.1.40'
+	option table '101'
+
+config route 'proxy_wan1_default'
+	option interface 'wan'
+	option target '0.0.0.0/0'
+	option gateway '192.168.1.1'
+	option table '101'
+
+config rule 'proxy_wan1_rule'
+	option src '192.168.1.40/32'
+	option lookup '101'
+	option priority '10101'
+
