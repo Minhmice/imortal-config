@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-ROUTER_IP="${1:-192.168.2.1}"
+ROUTER_IP="${1:-100.71.252.27}"
 ROUTER_USER="${2:-root}"
 
 echo "Deploying configs to ${ROUTER_USER}@${ROUTER_IP}..."

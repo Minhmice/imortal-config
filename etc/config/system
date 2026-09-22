@@ -6,6 +6,8 @@ config system
 	option ttylogin '0'
 	option log_size '128'
 	option urandom_seed '0'
+	option zram_comp_algo 'zstd'
+	option zram_size_mb '256'
 
 config timeserver 'ntp'
 	option enabled '1'

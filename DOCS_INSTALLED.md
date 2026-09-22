@@ -1,53 +1,67 @@
-# Tính năng đã cài đặt trên ImmortalWrt
+# Tính năng đã cài đặt & Tối ưu trên ImmortalWrt (Nokia Bell XG-040G-MD)
 
-Ghi chú trạng thái thực tế của router ImmortalWrt Airoha AN7581.
+Tài liệu chi tiết cấu hình và tối ưu hóa router Airoha AN7581.
+
+---
 
 ## 1. 3proxy + Tailscale (Remote Access)
-
 - Cấu hình: `/etc/3proxy-residential.cfg`.
 - 3proxy chạy trên port `10001`, `10002`, `10003`; Tailscale cấp IP `100.71.252.27`.
-- Ba port cùng đi ra qua WAN `192.168.1.40`, nên cùng public egress IP. Khác port chỉ tách account, không tạo thêm IP.
-- Tailscale cung cấp đường hầm riêng; không cần expose proxy trực tiếp ra Internet.
+- Ba port cùng đi ra qua WAN `192.168.1.40`, chia sẻ cùng public egress IP.
+- Dropbear SSH đã bỏ giới hạn interface `lan`, cho phép quản trị an toàn từ xa qua Tailscale (`ssh root@100.71.252.27`).
 - Định dạng client:
-
   ```text
   socks5h://<user>:<password>@100.71.252.27:<port>
   ```
 
-## 2. SmartDNS
+---
 
-- Đã cài `smartdns` và `luci-app-smartdns`.
-- Service đang chạy, dùng nhiều upstream DNS và các tùy chọn cache/prefetch/dual-stack.
-- SmartDNS chọn upstream/bản ghi theo speed check và cache; kết quả phụ thuộc cấu hình, mạng và thời điểm đo.
+## 2. Phần cứng Định Tuyến Tốc Độ Cao (Flow Offloading / Hardware NAT)
+- Cấu hình: `/etc/config/firewall` (`flow_offloading='1'`, `flow_offloading_hw='1'`).
+- Tình trạng: Flowtable phần cứng (`flags offload`) đã hoạt động trực tiếp trên các cổng `lan1` (2.5G), `lan2`, `lan3`, `lan4`.
+- Tác dụng: Khi truyền tải lưu lượng lớn (download 2.5Gbps, kéo torrent, truyền file LAN), gói tin được switch phần cứng định tuyến trực tiếp mà không tốn chu kỳ CPU, giữ tải CPU ở mức < 1%.
 
-## 3. Khóa TTL Tầng Kernel
+---
 
+## 3. Cặp bài trùng: AdGuard Home + SmartDNS
+- Chuỗi xử lý DNS:
+  ```text
+  Thiết bị (PC, Phone, TV) 
+    → dnsmasq (Port 53) 
+    → AdGuard Home (Port 5335) [Lọc domain quảng cáo, tracker, mã độc]
+    → SmartDNS (Port 6053) [Gửi đa luồng DoT, đo ping trả IP nhanh nhất]
+    → Internet
+  ```
+- Kết quả kiểm tra:
+  - Tên miền quảng cáo (`doubleclick.net`) bị chặn về `0.0.0.0`.
+  - Tên miền thông thường (`google.com`) được phân giải song song với độ trễ thấp nhất.
+- Giao diện quản trị AdGuard Home: `http://100.71.252.27:3000` (hoặc `http://192.168.2.1:3000`).
+
+---
+
+## 4. Tối ưu ZRAM Swap (Thuật toán ZSTD)
+- Cấu hình:
+  - `system.@system[0].zram_comp_algo='zstd'`
+  - `system.@system[0].zram_size_mb='256'`
+  - `vm.swappiness = 100` trong `/etc/sysctl.d/15-zram-swap.conf`
+- Tác dụng: Tăng kích thước swap nén lên 256MB dùng thuật toán `zstd` có tỷ lệ nén cao, mở rộng dung lượng bộ nhớ khả dụng của router để chạy ổn định đồng thời 3proxy, AdGuard Home, SmartDNS và OpenClash.
+
+---
+
+## 5. TCP BBR Congestion Control
+- Kernel module `kmod-tcp-bbr` được kích hoạt và gán mặc định trong `/etc/sysctl.d/12-tcp-bbr.conf`.
+- Tối ưu hóa throughput cho các kết nối xuyên quốc gia, giảm packet loss và tối ưu độ trễ cho Proxy / VPN.
+
+---
+
+## 6. Khóa TTL Tầng Kernel
 - File: `/etc/nftables.d/20-ttl-lock.nft`.
-- Rule nftables đặt IPv4 TTL và IPv6 Hop Limit thành `64` cho traffic postrouting.
-- Chạy trực tiếp trong hook Netfilter postrouting của kernel, không tốn tài nguyên.
+- Tự động chuẩn hóa IPv4 TTL = 64 và IPv6 Hop Limit = 64 tại hook postrouting.
 
-## 4. NATMap
+---
 
-- Đã cài `natmap` và `luci-app-natmap`.
-- Hỗ trợ STUN hole-punching khi cần mở port ra ngoài từ môi trường CGNAT.
-
-## 5. TCP BBR Congestion Control (Google BBR)
-
-- Đã cài kernel module `kmod-tcp-bbr`.
-- File cấu hình: `/etc/sysctl.d/12-tcp-bbr.conf`.
-- Tự động thay thế thuật toán `cubic` cũ bằng `bbr`, giúp tối đa hóa throughput mạng quốc tế, giảm packet loss và tối ưu độ trễ cho Proxy / VPN / SSH.
-
-## 6. PBR (Policy Based Routing)
-
-- Đã cài `pbr` và `luci-app-pbr`.
-- Cho phép định tuyến thông minh trên nền nftables: ép các thiết bị, IP hoặc domain cụ thể đi qua interface mong muốn (WAN, Tailscale, VPN...).
-
-## 7. NLBWMON (Giám Sát Băng Thông Thiết Bị)
-
-- Đã cài `nlbwmon` và `luci-app-nlbwmon`.
-- Thống kê chi tiết dung lượng upload/download của từng địa chỉ IP và thiết bị trong mạng LAN, có biểu đồ Chart.js trực quan trong LuCI.
-
-## 8. Wake-on-LAN (WOL)
-
-- Đã cài `luci-app-wol`, `wakeonlan`, `etherwake`.
-- Cho phép bật máy tính (PC) từ xa trong mạng LAN qua giao diện web LuCI hoặc qua kết nối Tailscale.
+## 7. Các công cụ quản trị khác
+- **Policy Based Routing (`pbr`)**: Định tuyến theo thiết bị / domain.
+- **NLBWMON (`nlbwmon`)**: Giám sát lưu lượng mạng chi tiết từng IP trong LuCI.
+- **Wake-on-LAN (`luci-app-wol`)**: Đánh thức PC từ xa qua mạng nội bộ hoặc Tailscale.
+- **NATMap (`natmap`)**: Hỗ trợ đục lỗ CGNAT khi cần mở port.
