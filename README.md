@@ -4,15 +4,14 @@ Kho lưu trữ cấu hình cho router ImmortalWrt (Airoha AN7581) chạy `3proxy
 
 ## Cấu trúc thư mục
 
-```text
 ├── etc/
 │   ├── 3proxy-residential.cfg   # Cấu hình 3proxy đa cổng (10001, 10002, 10003)
-│   ├── config/                  # Các file UCI config (firewall, network, tailscale, dropbear, ...)
+│   ├── config/                  # Các file UCI config (firewall, network, tailscale, smartdns, natmap...)
 │   ├── hotplug.d/iface/         # Script hotplug tự gán IP & route khi tailscale0 up
 │   ├── init.d/                  # Procd init service (resproxy)
+│   ├── nftables.d/              # Custom nftables hook (20-ttl-lock.nft khóa TTL 64 chống soi phát Wi-Fi)
 │   └── rc.local                 # Script khởi động đảm bảo route Tailscale
 └── scripts/
-    ├── backup.sh                # Kéo cấu hình mới nhất từ router về repo
     └── deploy.sh                # Đẩy cấu hình từ repo lên router và nạp lại dịch vụ
 ```
 

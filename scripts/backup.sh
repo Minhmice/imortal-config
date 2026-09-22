@@ -6,7 +6,7 @@ ROUTER_USER="${2:-root}"
 
 echo "Fetching configs from ${ROUTER_USER}@${ROUTER_IP}..."
 
-ssh -o BatchMode=yes "${ROUTER_USER}@${ROUTER_IP}" \
+ssh.exe -o BatchMode=yes -o StrictHostKeyChecking=no "${ROUTER_USER}@${ROUTER_IP}" \
   "tar -czf - \
     /etc/3proxy-residential.cfg \
     /etc/init.d/resproxy \
@@ -15,8 +15,10 @@ ssh -o BatchMode=yes "${ROUTER_USER}@${ROUTER_IP}" \
     /etc/config/3proxy \
     /etc/config/tailscale \
     /etc/config/firewall \
-    /etc/config/network \
     /etc/config/dropbear \
+    /etc/config/smartdns \
+    /etc/config/natmap \
+    /etc/nftables.d \
     /etc/config/system" | tar -xzf -
 
 echo "Configs backed up successfully into ./etc"
