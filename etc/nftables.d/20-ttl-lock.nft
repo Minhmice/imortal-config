@@ -1,5 +1,5 @@
 chain mangle_ttl {
 	type filter hook postrouting priority mangle; policy accept;
-	ip ttl set 64
-	ip6 hoplimit set 64
+	oifname "lan1" ip ttl set 64
+	oifname "lan1" ip6 hoplimit set 64
 }

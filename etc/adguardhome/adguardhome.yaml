@@ -48,7 +48,7 @@ dns:
   cache_size: 4194304
   cache_ttl_min: 0
   cache_ttl_max: 0
-  cache_optimistic: false
+  cache_optimistic: true
   cache_optimistic_answer_ttl: 30s
   cache_optimistic_max_age: 12h
   bogus_nxdomain: []
@@ -92,7 +92,7 @@ tls:
 querylog:
   dir_path: ""
   ignored: []
-  interval: 90d
+  interval: 7d
   size_memory: 1000
   enabled: true
   ignored_enabled: false
@@ -100,7 +100,7 @@ querylog:
 statistics:
   dir_path: ""
   ignored: []
-  interval: 1d
+  interval: 7d
   enabled: true
   ignored_enabled: false
 filters:

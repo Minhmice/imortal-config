@@ -4,4 +4,7 @@ config dropbear 'main'
 	option PasswordAuth 'on'
 	option RootPasswordAuth 'on'
 	option Port '22'
+	option MaxAuthTries '3'
+	option IdleTimeout '900'
+	option SSHKeepAlive '60'
 

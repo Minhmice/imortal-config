@@ -8,7 +8,7 @@ Tài liệu chi tiết cấu hình và tối ưu hóa router Airoha AN7581.
 - Cấu hình: `/etc/3proxy-residential.cfg`.
 - 3proxy chạy trên port `10001`, `10002`, `10003`; Tailscale cấp IP `100.71.252.27`.
 - Ba port cùng đi ra qua WAN `192.168.1.40`, chia sẻ cùng public egress IP.
-- Dropbear SSH nghe trên LAN và Tailscale; đăng nhập mật khẩu đã tắt, chỉ nhận SSH key.
+- Dropbear SSH nghe trên LAN và Tailscale; cả SSH key và mật khẩu đều được hỗ trợ, cấu hình MaxAuthTries=3, IdleTimeout=900, SSHKeepAlive=60.
 - Định dạng client:
   ```text
   socks5h://<user>:<password>@100.71.252.27:<port>
@@ -35,7 +35,7 @@ Tài liệu chi tiết cấu hình và tối ưu hóa router Airoha AN7581.
 - Kết quả kiểm tra:
   - `doubleclick.net` trả `0.0.0.0`/`::`.
   - `google.com` trả kết quả bình thường qua chuỗi dnsmasq → AdGuard Home → SmartDNS.
-- AdGuard Home DNS chỉ nghe loopback `127.0.0.1:5335`; Web UI chỉ nghe Tailscale `100.71.252.27:3000` và đã bật xác thực admin.
+- AdGuard Home DNS chỉ nghe loopback `127.0.0.1:5335`; Web UI chỉ nghe Tailscale `100.71.252.27:3000` và đã bật xác thực admin; query log và statistics lưu 7 ngày, bật optimistic cache.
 
 ---
 
@@ -56,17 +56,16 @@ Tài liệu chi tiết cấu hình và tối ưu hóa router Airoha AN7581.
 
 ## 6. Khóa TTL Tầng Kernel
 - File: `/etc/nftables.d/20-ttl-lock.nft`.
-- Tự động chuẩn hóa IPv4 TTL = 64 và IPv6 Hop Limit = 64 tại hook postrouting.
+- Tự động chuẩn hóa IPv4 TTL = 64 và IPv6 Hop Limit = 64 được giới hạn riêng cho interface WAN (`oifname "lan1"`), không làm ảnh hưởng traffic LAN và Tailscale.
 
-## 7. Hardening sau audit
+## 7. Hardening và Dọn Dẹp Sau Audit
 - Đã xóa rule WAN `Allow-3proxy`; proxy chỉ dùng qua Tailscale/LAN.
 - Đã tắt full-cone NAT vì không có nhu cầu gaming/NAT traversal cụ thể.
 - Đã gỡ các include firewall Zerotier/OpenClash không hoạt động để `fw4 check` sạch cảnh báo.
 - Tailscale đã trả về procd quản lý bằng nftables; xóa route/IP thủ công trong `rc.local` và hotplug.
-- PBR, NATMap và OpenClash vẫn tắt vì chưa có policy/instance thực tế.
-- `dns_redirect` toàn cục đã tắt; cưỡng ép DNS toàn mạng chỉ nên thêm bằng rule giới hạn source zone LAN, không redirect mọi interface.
-- LuCI/AdGuard/SSH vẫn chỉ nên dùng qua LAN/Tailscale; WAN input tiếp tục `REJECT`.
-
+- Đã tắt tự khởi động (autostart) các dịch vụ nhàn rỗi chưa có nhu cầu dùng: 3proxy mặc định, natmap, openclash, p910nd, ksmbd, wsdd2.
+- `dns_redirect` toàn cục đã tắt; cưỡng ép DNS toàn mạng chỉ nên thêm bằng rule giới hạn source zone LAN.
+- LuCI/AdGuard/SSH chỉ truy cập qua LAN/Tailscale; WAN input tiếp tục `REJECT`.
 ---
 
 ## 8. Các công cụ quản trị khác
