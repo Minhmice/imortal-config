@@ -24,6 +24,7 @@ ssh.exe -o BatchMode=yes -o StrictHostKeyChecking=no "${ROUTER_USER}@${ROUTER_IP
     /etc/config/adguardhome \
     /etc/config/dhcp \
     /etc/sysctl.conf \
+    /etc/config/rpcd \
     /etc/config/system" | tar -xzf -
 
 echo "Configs backed up successfully into ./etc"

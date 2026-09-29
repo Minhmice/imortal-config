@@ -12,8 +12,8 @@ http:
   address: 100.71.252.27:3000
   session_ttl: 30d
 users:
-  - name: admin
-    password: $2b$12$OFcRrN2OoP6stR4ZUZjRPuEfc68.DVWu0s5LQDGv3thon2hV77Dcy
+  - name: minhmice
+    password: $2b$12$hppm7WagUqNmVqNX7JDhyO6YMwHPdzWHcczoUebS0QnF.HmW7uRoy
 auth_attempts: 5
 block_auth_min: 15
 http_proxy: ""
