@@ -4,16 +4,31 @@ Tài liệu chi tiết cấu hình và tối ưu hóa router Airoha AN7581.
 
 ---
 
-## 1. 3proxy + Tailscale (Remote Access)
-- Cấu hình: `/etc/3proxy-residential.cfg`.
-- 3proxy chạy trên port `10001`, `10002`, `10003`; Tailscale cấp IP `100.71.252.27`.
-- Ba port cùng đi ra qua WAN `192.168.1.40`, chia sẻ cùng public egress IP.
-- Dropbear SSH nghe trên LAN và Tailscale; cả SSH key và mật khẩu đều được hỗ trợ, cấu hình MaxAuthTries=3, IdleTimeout=900, SSHKeepAlive=60.
-- Định dạng client:
-  ```text
-  socks5h://<user>:<password>@100.71.252.27:<port>
-  ```
+## 1. 3proxy + Tailscale (Dual Router Topology)
 
+### Node 1: `immortalwrt` (Router 1)
+- IP Tailscale: **`100.71.252.27`**
+- IP Mạng nhà (WAN): `192.168.1.40`
+- IP Mạng nội bộ (LAN): `192.168.10.1`
+- SOCKS5 Proxies:
+  ```text
+  socks5h://proxy1:MinhProxy_9267_Xk3@100.71.252.27:10001
+  socks5h://proxy2:Proxy2_8Nk32xQa@100.71.252.27:10002
+  socks5h://proxy3:Proxy3_7Lm94zKt@100.71.252.27:10003
+  ```
+- Quản trị: LuCI `http://100.71.252.27/` | AdGuard `http://100.71.252.27:3000/` | SSH: `ssh root@100.71.252.27`
+
+### Node 2: `immortalwrt2` (Router 2)
+- IP Tailscale: **`100.68.191.34`**
+- IP Mạng nhà (WAN): `192.168.1.42`
+- IP Mạng nội bộ (LAN): `192.168.20.1`
+- SOCKS5 Proxies:
+  ```text
+  socks5h://proxy1:MinhProxy_9267_Xk3@100.68.191.34:10001
+  socks5h://proxy2:Proxy2_8Nk32xQa@100.68.191.34:10002
+  socks5h://proxy3:Proxy3_7Lm94zKt@100.68.191.34:10003
+  ```
+- Quản trị: LuCI `http://100.68.191.34/` *(hoặc `http://192.168.1.42/`)* | AdGuard `http://100.68.191.34:3000/` | SSH: `ssh root@100.68.191.34`
 ---
 
 ## 2. Phần cứng Định Tuyến Tốc Độ Cao (Flow Offloading / Hardware NAT)

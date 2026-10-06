@@ -1,0 +1,8 @@
+# Local hardware dumps and binary artifacts
+backup_router2_stock/
+*.bin
+*.part
+*.tar.gz
+
+# Cloned upstream repositories
+tools/

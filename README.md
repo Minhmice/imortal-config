@@ -32,11 +32,11 @@ socks5h://proxy3:Proxy3_7Lm94zKt@100.71.252.27:10003
 ### Sao lưu cấu hình từ router
 ```sh
 ./scripts/backup.sh [ROUTER_IP] [ROUTER_USER]
-# Mặc định: 192.168.2.1 / root
+# Mặc định: 192.168.10.1 / root
 ```
 
 ### Triển khai cấu hình lên router
 ```sh
 ./scripts/deploy.sh [ROUTER_IP] [ROUTER_USER]
-# Mặc định: 192.168.2.1 / root
+# Mặc định: 192.168.10.1 / root
 ```

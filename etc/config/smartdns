@@ -21,25 +21,25 @@ config smartdns
 	option old_auto_set_dnsmasq '0'
 
 config server
-	option enabled '1'
+	option enabled '0'
 	option type 'udp'
 	option name 'viettel1'
 	option ip '203.113.131.1'
 
 config server
-	option enabled '1'
+	option enabled '0'
 	option type 'udp'
 	option name 'viettel2'
 	option ip '203.113.131.2'
 
 config server
-	option enabled '1'
+	option enabled '0'
 	option type 'udp'
 	option name 'google1'
 	option ip '8.8.8.8'
 
 config server
-	option enabled '1'
+	option enabled '0'
 	option type 'udp'
 	option name 'cloudflare1'
 	option ip '1.1.1.1'

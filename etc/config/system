@@ -1,6 +1,6 @@
 
 config system
-	option hostname 'ImmortalWrt'
+	option hostname 'immortalwrt2'
 	option timezone 'CST-8'
 	option zonename 'Asia/Shanghai'
 	option ttylogin '0'
